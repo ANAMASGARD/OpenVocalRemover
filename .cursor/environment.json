@@ -1,0 +1,20 @@
+{
+  "name": "Open Vocal Remover",
+  "install": "npm ci",
+  "terminals": [
+    {
+      "name": "chrome-dev",
+      "command": "npm run dev",
+      "description": "CRXJS Vite dev server for the Chrome extension (port 5173, writes dist/chrome)."
+    },
+    {
+      "name": "firefox-dev",
+      "command": "npm run dev:firefox",
+      "description": "CRXJS Vite dev server for the Firefox extension (port 5174, writes dist/firefox)."
+    }
+  ],
+  "ports": [
+    { "name": "chrome-dev", "port": 5173 },
+    { "name": "firefox-dev", "port": 5174 }
+  ]
+}
