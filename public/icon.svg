@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title>Open Vocal Remover</title>
+  <rect width="128" height="128" rx="28" fill="#111827"/>
+  <path d="M31 67V49m16 35V34m17 50V18m17 66V40m16 27V51" fill="none" stroke="#f9fafb" stroke-linecap="round" stroke-width="10"/>
+  <path d="M25 99h78" stroke="#38bdf8" stroke-linecap="round" stroke-width="8"/>
+</svg>
