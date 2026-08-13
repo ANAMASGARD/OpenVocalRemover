@@ -1,3 +1,10 @@
 # Background context
 
-No background context is registered yet. When a feature needs one, use a browser-aware manifest configuration because Chrome MV3 uses a service worker while Firefox has different background support.
+`src/background/index.ts` is the minimal MV3 background entry used to establish
+browser-specific build output:
+
+- Chrome: `background.service_worker`
+- Firefox: `background.scripts`
+
+It intentionally has no feature behavior yet. Later plan steps attach validated
+runtime messaging here through `src/platform/browser.ts`.

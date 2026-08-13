@@ -6,9 +6,16 @@ import { getBrowserTarget, getBuildOutputDir } from './build-target.ts'
 
 export default defineConfig(({ mode }) => {
   const browser = getBrowserTarget(mode)
+  const port = browser === 'firefox' ? 5174 : 5173
 
   return {
     plugins: [react(), ...crx({ manifest, browser })],
     build: { outDir: getBuildOutputDir(browser) },
+    // Keep Chrome and Firefox HMR servers on distinct ports even if a caller
+    // omits `--port` when launching `vite --mode firefox`.
+    server: {
+      port,
+      strictPort: true,
+    },
   }
 })

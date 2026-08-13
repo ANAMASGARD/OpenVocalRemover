@@ -77,10 +77,15 @@ Load `dist/chrome/` in Chrome after `npm run build`, and use `dist/firefox/manif
 - `src/popup/` contains the active React extension surface.
 - `src/shared/` holds extension-wide constants, types, and later the validated
   messages exchanged between extension contexts.
-- `src/platform/` is the only future boundary for browser API access.
-- `src/content/` and `src/background/` are reserved for future extension
-  contexts. Do not register either in the manifest until a concrete feature
-  needs it.
+- `src/platform/` is the only boundary for browser API access (messaging,
+  storage, and active-tab identification).
+- `src/extension/` holds build-output helpers used to assert Chrome versus
+  Firefox manifest shapes.
+- `src/test/` holds deterministic message and audio-block fixtures for unit
+  tests.
+- `src/background/` is a minimal MV3 background entry so Chrome and Firefox
+  builds emit the correct background shape. Feature behavior is added later.
+- `src/content/` remains reserved until the YouTube lifecycle feature lands.
 - Future audio work uses `src/audio-worklets/` for real-time capture/playback
   and `src/worker/` for inference. Inference and model details must not be put
   into popup components or an audio render callback.

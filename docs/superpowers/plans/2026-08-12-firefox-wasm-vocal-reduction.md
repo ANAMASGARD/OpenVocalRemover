@@ -93,18 +93,18 @@ Files: `README.md`, `docs/architecture.md`, `docs/benchmarking.md`, `.gitignore`
 Acceptance: documentation contains no promises of 90--100% removal or lossless
 instrumentals; all existing checks pass.
 
-### 2. `chore: establish extension build targets and test foundations`
+### 2. `chore: establish extension build targets and test foundations` ✅
 
 Files: `package.json`, `vite.config.ts`, `src/extension/*`, `src/**/*.test.ts`,
 `vitest.config.ts` if needed.
 
-- Preserve separate `dist/firefox` and `dist/chrome` outputs.
-- Add a browser abstraction with the smallest useful surface (runtime messaging,
+- [x] Preserve separate `dist/firefox` and `dist/chrome` outputs.
+- [x] Add a browser abstraction with the smallest useful surface (runtime messaging,
   storage, tab identification). Browser API differences belong here, not inside
   audio code.
-- Add test helpers for message payload validation and deterministic audio-block
+- [x] Add test helpers for message payload validation and deterministic audio-block
   fixtures.
-- Keep live commands distinct: `npm run dev:firefox` serves Firefox on 5174;
+- [x] Keep live commands distinct: `npm run dev:firefox` serves Firefox on 5174;
   `npm run dev` serves Chrome on 5173. Their HMR sockets cannot share one server.
 
 Acceptance: the two built manifests are inspected in tests: Firefox uses
