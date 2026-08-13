@@ -1,6 +1,37 @@
 # Open Vocal Remover
 
-Open Vocal Remover is a cross-browser extension foundation for Chrome and Firefox. It currently supplies only an accessible popup and no audio-processing behavior, browser permissions, or host permissions.
+Open Vocal Remover is a free, open-source browser extension for **best-effort,
+local AI vocal reduction** on explicitly activated, supported YouTube watch
+pages. Audio, model inference, and derived buffers stay on the user's device.
+
+The current codebase is still the extension foundation: it supplies an
+accessible popup and build targets, but it does not yet alter audio, request
+browser permissions, or include a model. The staged implementation roadmap is
+in [the Firefox-first plan](docs/superpowers/plans/2026-08-12-firefox-wasm-vocal-reduction.md).
+
+## Product boundaries
+
+- This project does not promise perfect separation, instrumental-only output, a
+  fixed percentage of vocal reduction, artifact-free audio, or support for every
+  YouTube stream. Results depend on the recording, backing vocals, reverb,
+  stereo effects, and the device.
+- The first public release is Firefox-first and uses a local WebAssembly CPU
+  inference path. Chrome remains a shared build target; WebGPU is a later,
+  optional acceleration path.
+- Processing will require an explicit user action on a supported YouTube watch
+  page (`https://www.youtube.com/watch*`, including SPA navigations that keep
+  the user on a playable watch page). Other YouTube surfaces and non-YouTube
+  pages are out of scope. It will never activate automatically.
+- The production audio path must fail open: any error, deadline miss,
+  navigation, disable action, or unsupported capability immediately restores
+  the original YouTube audio.
+- The extension will not use a server, CDN model download, upload, analytics,
+  or telemetry. A model and its runtime assets will be packaged inside the
+  extension before any inference feature is enabled.
+
+See [the architecture](docs/architecture.md) and
+[benchmarking requirements](docs/benchmarking.md) for the implementation
+contracts.
 
 ## Requirements
 
@@ -25,7 +56,9 @@ npm run dev:firefox
 
 Then open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on**, and select `dist/firefox/manifest.json`. The Firefox mode emits Firefox-compatible background metadata for CRXJS development reloads.
 
-Both development servers can run at once: Chrome uses port 5173 and `dist/chrome/`; Firefox uses port 5174 and `dist/firefox/`. This separation prevents one browser's development manifest from overwriting the other's.
+Both development servers can run at once: Chrome uses port 5173 and
+`dist/chrome/`; Firefox uses port 5174 and `dist/firefox/`. This separation
+prevents one browser's development manifest from overwriting the other's.
 
 ## Verification and production build
 
@@ -42,6 +75,15 @@ Load `dist/chrome/` in Chrome after `npm run build`, and use `dist/firefox/manif
 ## Project boundaries
 
 - `src/popup/` contains the active React extension surface.
-- `src/shared/` holds extension-wide constants and types.
+- `src/shared/` holds extension-wide constants, types, and later the validated
+  messages exchanged between extension contexts.
 - `src/platform/` is the only future boundary for browser API access.
-- `src/content/` and `src/background/` are reserved for future extension contexts. Do not register either in the manifest until a concrete feature needs it.
+- `src/content/` and `src/background/` are reserved for future extension
+  contexts. Do not register either in the manifest until a concrete feature
+  needs it.
+- Future audio work uses `src/audio-worklets/` for real-time capture/playback
+  and `src/worker/` for inference. Inference and model details must not be put
+  into popup components or an audio render callback.
+- Packaged model assets belong in `public/models/`, accompanied by provenance
+  metadata. They never belong in `src/public/` and are never downloaded at
+  runtime.

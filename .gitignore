@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Local performance captures. Keep committed benchmark summaries and model
+# provenance records under version control.
+.local-benchmarks/
+*.cpuprofile
+*.trace.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
