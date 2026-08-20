@@ -48,5 +48,12 @@ describe('processing settings', () => {
         maximumPlaybackQueueBlockCount: 16,
       }),
     ).toThrow(/latency budget/)
+
+    expect(() =>
+      validatePipelineConfiguration({
+        ...DEFAULT_PIPELINE_CONFIGURATION,
+        transportBlockFrameCount: 256,
+      }),
+    ).toThrow(/one render quantum/)
   })
 })

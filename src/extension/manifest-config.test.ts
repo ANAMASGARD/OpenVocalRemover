@@ -30,6 +30,8 @@ describe('manifest configuration', () => {
         run_at: 'document_idle',
       },
     ])
+    expect(manifest.web_accessible_resources ?? []).toEqual([])
+    expect(JSON.stringify(manifest)).not.toContain('<all_urls>')
   })
 
   it('uses Chrome service_worker background for non-Firefox modes', async () => {

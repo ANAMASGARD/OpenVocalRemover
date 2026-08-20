@@ -105,11 +105,13 @@ export function validatePipelineConfiguration(
     throw new Error('modelHopFrameCount must not exceed modelFrameCount')
   }
   if (
-    configuration.transportBlockFrameCount % configuration.renderQuantumFrameCount !== 0
-    || configuration.modelFrameCount % configuration.renderQuantumFrameCount !== 0
+    configuration.modelFrameCount % configuration.renderQuantumFrameCount !== 0
     || configuration.modelHopFrameCount % configuration.renderQuantumFrameCount !== 0
   ) {
-    throw new Error('transport and model frame counts must align to renderQuantumFrameCount')
+    throw new Error('model frame counts must align to renderQuantumFrameCount')
+  }
+  if (configuration.transportBlockFrameCount !== configuration.renderQuantumFrameCount) {
+    throw new Error('transportBlockFrameCount must equal one render quantum in v1')
   }
 
   const hopDurationMs = configuration.modelHopFrameCount / configuration.sampleRateHz * 1_000
