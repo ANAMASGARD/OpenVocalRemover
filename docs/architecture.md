@@ -15,23 +15,32 @@ base; WebGPU is not required for the first release.
 
 ## Audio path
 
-The production path is fixed and every queue is bounded:
+The proposed production path is causal and every queue is bounded:
 
 ```text
 YouTube <video>
-  -> MediaElementAudioSourceNode
+  -> proven CaptureAdapter
+  -> raw/processed gain graph
   -> AudioWorklet capture
-  -> fixed 2–3 second ring buffer
-  -> dedicated inference worker
+  -> bounded transferable transport
+  -> extension-origin host and dedicated inference worker
+  -> causal two-stem model
   -> AudioWorklet scheduled playback
   -> speakers
 ```
 
-On enable, the extension pauses the selected video once, fills the initial
-2–3 second buffer, then resumes it through this processed path. It does not
-claim to obtain future YouTube audio frames. A missed output deadline is a
-failure: the graph must safely restore original audio rather than increase
-latency, loop silence, or stutter.
+Web Audio does not expose future media samples. The extension therefore does
+not pause to prefill a multi-second buffer or delay audio behind the picture.
+The selected model must be causal, and capture, inference, playback, model
+algorithmic latency, and crossfade must remain inside a 100 ms end-to-end A/V
+sync budget. A missed output deadline is a failure: the graph selects raw audio
+rather than increasing latency, looping silence, or stuttering.
+
+The `MediaElementAudioSourceNode` route remains behind a real-browser
+feasibility gate because CORS-tainted media can produce silence. No production
+activation may claim the element until Chrome and Firefox VOD/live evidence is
+recorded. Browser-specific consented capture is allowed only through the same
+typed `CaptureAdapter` boundary.
 
 `AudioWorklet` is required for capture and scheduled playback. Do not introduce
 `ScriptProcessorNode`; it runs on the main thread. Audio render callbacks must
@@ -43,7 +52,8 @@ not await, fetch, load a model, run inference, or allocate unbounded memory.
 React popup
   -> validated runtime message
   -> YouTube content script and media controller
-  -> AudioWorklet ports <-> inference-worker module
+  -> authenticated extension-origin processing host
+  -> direct AudioWorklet port <-> inference-worker module
   -> local ONNX Runtime Wasm and packaged model
 ```
 
@@ -60,8 +70,8 @@ media routing after teardown.
 
 ## Inference boundary
 
-The inference worker owns model-session creation, preprocessing, separation,
-and postprocessing. It uses only extension-packaged assets:
+The inference worker owns causal model-session creation, state, preprocessing,
+separation, and postprocessing. It uses only extension-packaged assets:
 
 ```text
 public/models/<model>/

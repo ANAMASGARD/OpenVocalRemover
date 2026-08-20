@@ -11,7 +11,11 @@ function processRequest(): Extract<WorkerRequest, { type: 'process' }> {
   return {
     type: 'process',
     block: {
+      sessionId: 'session-8',
       sequence: 8,
+      startFrame: 1_024,
+      capturedAtMs: 2_000,
+      deadlineAtMs: 2_090,
       sampleRateHz: 48_000,
       channelCount: 2,
       frameCount: 4,
@@ -42,13 +46,23 @@ describe('extension processing protocol', () => {
   })
 
   it('rejects malformed worker requests and unknown worker responses', () => {
-    expect(() => parseWorkerRequest({ type: 'initialise', sampleRateHz: 0, channelCount: 2 })).toThrow(
-      /sampleRateHz/,
-    )
+    expect(() =>
+      parseWorkerRequest({
+        type: 'initialise',
+        sessionId: 'session-1',
+        sampleRateHz: 0,
+        channelCount: 2,
+        modelId: 'model',
+        modelFrameCount: 1_024,
+        modelHopFrameCount: 1_024,
+      }),
+    ).toThrow(/sampleRateHz/)
     expect(() => parseWorkerRequest({ type: 'process', block: { sequence: 1 } })).toThrow(
-      /sampleRateHz/,
+      /sessionId/,
     )
-    expect(() => parseWorkerResponse({ type: 'ready', backend: 'webgpu' })).toThrow(
+    expect(() =>
+      parseWorkerResponse({ type: 'ready', sessionId: 'session-1', backend: 'webgpu' }),
+    ).toThrow(
       /backend/,
     )
   })

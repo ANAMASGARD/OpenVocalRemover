@@ -36,9 +36,8 @@ export class ContentProcessingController {
   private getStatus(): ProcessingStatus {
     return {
       type: 'processing-status',
-      // Arming truthfully indicates explicit enablement before the later audio
-      // pipeline has buffered and started processed playback.
-      state: this.enabled ? 'arming' : 'idle',
+      // Probing truthfully indicates enablement before capture/model support is known.
+      state: this.enabled ? 'probing' : 'idle',
     }
   }
 }

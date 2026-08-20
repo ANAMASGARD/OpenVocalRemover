@@ -8,13 +8,15 @@ export type PipelineConfiguration = {
   sampleRateHz: number
   channelCount: ChannelCount
   renderQuantumFrameCount: number
-  inferenceChunkFrameCount: number
-  inferenceHopFrameCount: number
-  minimumBufferDurationMs: number
-  initialBufferDurationMs: number
-  maximumBufferDurationMs: number
-  maximumQueuedAudioBlocks: number
+  transportBlockFrameCount: number
+  modelFrameCount: number
+  modelHopFrameCount: number
+  algorithmicLatencyFrameCount: number
+  maximumCaptureQueueBlockCount: number
+  maximumPlaybackQueueBlockCount: number
+  maximumEndToEndLatencyMs: number
   processingDeadlineMs: number
+  crossfadeDurationMs: number
   modelId: string
 }
 
@@ -22,21 +24,20 @@ export const DEFAULT_PROCESSING_SETTINGS: ProcessingSettings = Object.freeze({
   enabled: false,
 })
 
-/**
- * A deliberately bounded baseline. Model-specific chunking may only replace
- * these values together with benchmark evidence and validation updates.
- */
+/** Safe placeholder profile; Task 9 must approve a real model before activation. */
 export const DEFAULT_PIPELINE_CONFIGURATION: PipelineConfiguration = Object.freeze({
   sampleRateHz: 48_000,
   channelCount: 2,
   renderQuantumFrameCount: 128,
-  inferenceChunkFrameCount: 16_384,
-  inferenceHopFrameCount: 8_192,
-  minimumBufferDurationMs: 2_000,
-  initialBufferDurationMs: 2_500,
-  maximumBufferDurationMs: 3_000,
-  maximumQueuedAudioBlocks: 1_125,
-  processingDeadlineMs: 1_500,
+  transportBlockFrameCount: 128,
+  modelFrameCount: 1_024,
+  modelHopFrameCount: 1_024,
+  algorithmicLatencyFrameCount: 1_024,
+  maximumCaptureQueueBlockCount: 4,
+  maximumPlaybackQueueBlockCount: 4,
+  maximumEndToEndLatencyMs: 100,
+  processingDeadlineMs: 10,
+  crossfadeDurationMs: 20,
   modelId: 'unselected',
 })
 
@@ -55,11 +56,24 @@ export function parseProcessingSettings(value: unknown): ProcessingSettings {
   if (!isRecord(value) || typeof value.enabled !== 'boolean') {
     return { ...DEFAULT_PROCESSING_SETTINGS }
   }
-
   return { enabled: value.enabled }
 }
 
-/** Validates the fixed-latency pipeline limits before a pipeline is created. */
+export function calculateWorstCasePipelineLatencyMs(
+  configuration: PipelineConfiguration,
+): number {
+  const queuedFrameCount =
+    (configuration.maximumCaptureQueueBlockCount
+      + configuration.maximumPlaybackQueueBlockCount)
+    * configuration.transportBlockFrameCount
+  const audioLatencyMs =
+    ((queuedFrameCount + configuration.algorithmicLatencyFrameCount)
+      / configuration.sampleRateHz)
+    * 1_000
+  return audioLatencyMs + configuration.processingDeadlineMs + configuration.crossfadeDurationMs
+}
+
+/** Validates that a causal profile cannot exceed the product A/V sync budget. */
 export function validatePipelineConfiguration(
   configuration: PipelineConfiguration,
 ): PipelineConfiguration {
@@ -68,37 +82,45 @@ export function validatePipelineConfiguration(
     throw new Error('channelCount must be 1 or 2')
   }
   assertPositiveInteger(configuration.renderQuantumFrameCount, 'renderQuantumFrameCount')
-  assertPositiveInteger(configuration.inferenceChunkFrameCount, 'inferenceChunkFrameCount')
-  assertPositiveInteger(configuration.inferenceHopFrameCount, 'inferenceHopFrameCount')
-  assertPositiveInteger(configuration.minimumBufferDurationMs, 'minimumBufferDurationMs')
-  assertPositiveInteger(configuration.initialBufferDurationMs, 'initialBufferDurationMs')
-  assertPositiveInteger(configuration.maximumBufferDurationMs, 'maximumBufferDurationMs')
-  assertPositiveInteger(configuration.maximumQueuedAudioBlocks, 'maximumQueuedAudioBlocks')
+  assertPositiveInteger(configuration.transportBlockFrameCount, 'transportBlockFrameCount')
+  assertPositiveInteger(configuration.modelFrameCount, 'modelFrameCount')
+  assertPositiveInteger(configuration.modelHopFrameCount, 'modelHopFrameCount')
+  assertPositiveInteger(configuration.algorithmicLatencyFrameCount, 'algorithmicLatencyFrameCount')
+  assertPositiveInteger(
+    configuration.maximumCaptureQueueBlockCount,
+    'maximumCaptureQueueBlockCount',
+  )
+  assertPositiveInteger(
+    configuration.maximumPlaybackQueueBlockCount,
+    'maximumPlaybackQueueBlockCount',
+  )
+  assertPositiveInteger(configuration.maximumEndToEndLatencyMs, 'maximumEndToEndLatencyMs')
   assertPositiveInteger(configuration.processingDeadlineMs, 'processingDeadlineMs')
+  assertPositiveInteger(configuration.crossfadeDurationMs, 'crossfadeDurationMs')
 
+  if (configuration.maximumEndToEndLatencyMs > 100) {
+    throw new Error('maximumEndToEndLatencyMs must not exceed 100')
+  }
+  if (configuration.modelHopFrameCount > configuration.modelFrameCount) {
+    throw new Error('modelHopFrameCount must not exceed modelFrameCount')
+  }
   if (
-    configuration.minimumBufferDurationMs !== 2_000
-    || configuration.maximumBufferDurationMs !== 3_000
-    || configuration.initialBufferDurationMs < configuration.minimumBufferDurationMs
-    || configuration.initialBufferDurationMs > configuration.maximumBufferDurationMs
+    configuration.transportBlockFrameCount % configuration.renderQuantumFrameCount !== 0
+    || configuration.modelFrameCount % configuration.renderQuantumFrameCount !== 0
+    || configuration.modelHopFrameCount % configuration.renderQuantumFrameCount !== 0
   ) {
-    throw new Error('initialBufferDurationMs must remain inside the fixed 2–3 second buffer budget')
+    throw new Error('transport and model frame counts must align to renderQuantumFrameCount')
   }
 
-  if (configuration.inferenceHopFrameCount > configuration.inferenceChunkFrameCount) {
-    throw new Error('inferenceHopFrameCount must not exceed inferenceChunkFrameCount')
+  const hopDurationMs = configuration.modelHopFrameCount / configuration.sampleRateHz * 1_000
+  if (configuration.processingDeadlineMs > hopDurationMs / 2) {
+    throw new Error('processingDeadlineMs must be no more than half of the model hop duration')
   }
-
-  if (
-    configuration.inferenceChunkFrameCount % configuration.renderQuantumFrameCount !== 0
-    || configuration.inferenceHopFrameCount % configuration.renderQuantumFrameCount !== 0
-  ) {
-    throw new Error('inference frame counts must align to renderQuantumFrameCount')
+  if (calculateWorstCasePipelineLatencyMs(configuration) > configuration.maximumEndToEndLatencyMs) {
+    throw new Error('bounded queues and model latency exceed the end-to-end latency budget')
   }
-
   if (configuration.modelId.trim().length === 0) {
     throw new Error('modelId must not be empty')
   }
-
   return configuration
 }

@@ -3,8 +3,16 @@
 export type ChannelCount = 1 | 2
 
 export type AudioBlock = {
+  /** Opaque capability-scoped processing session identifier. */
+  sessionId: string
   /** Monotonically increasing block number, starting at zero. */
   sequence: number
+  /** Absolute source-frame offset used as scheduling truth. */
+  startFrame: number
+  /** Monotonic diagnostic timestamp assigned at capture. */
+  capturedAtMs: number
+  /** Monotonic deadline after which this block must be discarded. */
+  deadlineAtMs: number
   sampleRateHz: number
   channelCount: ChannelCount
   frameCount: number
@@ -40,6 +48,22 @@ function readNonNegativeInteger(record: UnknownRecord, key: string, label: strin
   return value as number
 }
 
+function readNonNegativeFiniteNumber(record: UnknownRecord, key: string, label: string): number {
+  const value = record[key]
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    throw new Error(`${label}.${key} must be a non-negative finite number`)
+  }
+  return value
+}
+
+function readNonEmptyString(record: UnknownRecord, key: string, label: string): string {
+  const value = record[key]
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(`${label}.${key} must be a non-empty string`)
+  }
+  return value
+}
+
 function readChannelCount(record: UnknownRecord, label: string): ChannelCount {
   const value = record.channelCount
   if (value !== 1 && value !== 2) {
@@ -56,7 +80,14 @@ function readChannelCount(record: UnknownRecord, label: string): ChannelCount {
  */
 export function assertAudioBlock(value: unknown, label = 'audio block'): AudioBlock {
   const record = asRecord(value, label)
+  readNonEmptyString(record, 'sessionId', label)
   readNonNegativeInteger(record, 'sequence', label)
+  readNonNegativeInteger(record, 'startFrame', label)
+  const capturedAtMs = readNonNegativeFiniteNumber(record, 'capturedAtMs', label)
+  const deadlineAtMs = readNonNegativeFiniteNumber(record, 'deadlineAtMs', label)
+  if (deadlineAtMs <= capturedAtMs) {
+    throw new Error(`${label}.deadlineAtMs must be later than capturedAtMs`)
+  }
   readPositiveInteger(record, 'sampleRateHz', label)
   const channelCount = readChannelCount(record, label)
   const frameCount = readPositiveInteger(record, 'frameCount', label)
@@ -118,5 +149,21 @@ export function assertNextAudioSequence(previousSequence: number, nextSequence: 
   const expectedSequence = previousSequence + 1
   if (nextSequence !== expectedSequence) {
     throw new Error(`expected ${expectedSequence} after ${previousSequence}, received ${nextSequence}`)
+  }
+}
+
+/** Rejects stale sessions and frame discontinuities before scheduled playback. */
+export function assertAudioBlockContinuity(previous: AudioBlock, next: AudioBlock): void {
+  const validPrevious = assertAudioBlock(previous, 'previous audio block')
+  const validNext = assertAudioBlock(next, 'next audio block')
+  if (validPrevious.sessionId !== validNext.sessionId) {
+    throw new Error('audio block session changed before the pipeline was reset')
+  }
+  assertNextAudioSequence(validPrevious.sequence, validNext.sequence)
+  const expectedStartFrame = validPrevious.startFrame + validPrevious.frameCount
+  if (validNext.startFrame !== expectedStartFrame) {
+    throw new Error(
+      `expected start frame ${expectedStartFrame}, received ${validNext.startFrame}`,
+    )
   }
 }

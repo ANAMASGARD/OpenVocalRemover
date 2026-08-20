@@ -54,7 +54,7 @@ function startYouTubeWatchLifecycle(): void {
       // Do not expose untrusted payloads or page data in diagnostics.
       sendResponse({
         type: 'processing-status',
-        state: 'error',
+        state: 'failed',
         reason: 'Invalid extension command.',
       })
     }

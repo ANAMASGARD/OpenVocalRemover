@@ -7,11 +7,13 @@ import {
 
 export type ProcessingState =
   | 'idle'
-  | 'arming'
-  | 'buffering'
+  | 'awaiting-activation'
+  | 'probing'
+  | 'warming'
   | 'processing'
   | 'bypassed'
-  | 'error'
+  | 'unsupported'
+  | 'failed'
 
 export type InferenceBackend = 'wasm-simd' | 'wasm'
 
@@ -28,17 +30,26 @@ export type ProcessingStatus = {
 export type WorkerRequest =
   | {
       type: 'initialise'
+      sessionId: string
       sampleRateHz: number
       channelCount: ChannelCount
       modelId: string
+      modelFrameCount: number
+      modelHopFrameCount: number
     }
   | { type: 'process'; block: AudioBlock }
-  | { type: 'dispose' }
+  | { type: 'dispose'; sessionId: string }
 
 export type WorkerResponse =
-  | { type: 'ready'; backend: InferenceBackend }
+  | { type: 'ready'; sessionId: string; backend: InferenceBackend }
   | { type: 'processed'; block: AudioBlock }
-  | { type: 'failure'; operation: WorkerRequest['type']; message: string; fatal: boolean }
+  | {
+      type: 'failure'
+      sessionId: string
+      operation: WorkerRequest['type']
+      message: string
+      fatal: boolean
+    }
 
 type UnknownRecord = Record<string, unknown>
 
@@ -114,9 +125,15 @@ export function parseWorkerRequest(value: unknown): WorkerRequest {
   const type = readType(record, 'worker request')
 
   if (type === 'initialise') {
+    readString(record, 'sessionId', 'worker request')
     readPositiveInteger(record, 'sampleRateHz', 'worker request')
     readChannelCount(record, 'worker request')
     readString(record, 'modelId', 'worker request')
+    const modelFrameCount = readPositiveInteger(record, 'modelFrameCount', 'worker request')
+    const modelHopFrameCount = readPositiveInteger(record, 'modelHopFrameCount', 'worker request')
+    if (modelHopFrameCount > modelFrameCount) {
+      throw new Error('worker request.modelHopFrameCount must not exceed modelFrameCount')
+    }
     return value as WorkerRequest
   }
   if (type === 'process') {
@@ -124,6 +141,7 @@ export function parseWorkerRequest(value: unknown): WorkerRequest {
     return value as WorkerRequest
   }
   if (type === 'dispose') {
+    readString(record, 'sessionId', 'worker request')
     return value as WorkerRequest
   }
 
@@ -139,7 +157,7 @@ export function parseWorkerResponse(value: unknown): WorkerResponse {
     if (record.backend !== 'wasm-simd' && record.backend !== 'wasm') {
       throw new Error('worker response.backend must be wasm-simd or wasm')
     }
-    return { type, backend: record.backend }
+    return { type, sessionId: readString(record, 'sessionId', 'worker response'), backend: record.backend }
   }
   if (type === 'processed') {
     return { type, block: assertAudioBlock(record.block, 'worker response.block') }
@@ -151,6 +169,7 @@ export function parseWorkerResponse(value: unknown): WorkerResponse {
     }
     return {
       type,
+      sessionId: readString(record, 'sessionId', 'worker response'),
       operation,
       message: readString(record, 'message', 'worker response'),
       fatal: readBoolean(record, 'fatal', 'worker response'),

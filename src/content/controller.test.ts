@@ -16,7 +16,7 @@ describe('content processing controller', () => {
 
     expect(
       controller.handlePopupCommand({ type: 'set-processing-enabled', enabled: true }),
-    ).toEqual({ type: 'processing-status', state: 'arming' })
+    ).toEqual({ type: 'processing-status', state: 'probing' })
     expect(lifecycle.enable).toHaveBeenCalledTimes(1)
 
     controller.handlePopupCommand({ type: 'set-processing-enabled', enabled: true })
