@@ -1,4 +1,6 @@
 import { ContentProcessingController } from './controller.ts'
+import modelLockJson from '../../models/model-lock.json'
+import { resolveSelectedModel } from '../inference/runtime-model.ts'
 import { getExtensionApi } from '../platform/browser.ts'
 import { parsePopupCommand } from '../shared/protocol.ts'
 import {
@@ -6,6 +8,7 @@ import {
   isSupportedYouTubeWatchLocation,
   YouTubeVideoLifecycle,
 } from './youtube.ts'
+import { createRealtimePipelineDescriptor } from './audio-pipeline.ts'
 
 function startYouTubeWatchLifecycle(): void {
   if (!isSupportedYouTubeWatchLocation(window.location)) {
@@ -17,7 +20,14 @@ function startYouTubeWatchLifecycle(): void {
     // Capture remains unclaimed until the explicit two-browser probe passes.
     () => undefined,
   )
-  const controller = new ContentProcessingController(lifecycle)
+  // Capture remains behind the explicit two-browser manual gate. Keeping the
+  // worklet URL in this descriptor makes the compiled local module available
+  // without allowing the controller to claim media prematurely.
+  const pipeline = createRealtimePipelineDescriptor(
+    resolveSelectedModel(modelLockJson),
+    'unverified',
+  )
+  const controller = new ContentProcessingController(lifecycle, pipeline.availability)
 
   let synchroniseScheduled = false
   const scheduleSynchronise = (): void => {

@@ -3,6 +3,14 @@
 Status: **automated protocol/build evidence passes; live iframe/port evidence is
 not yet recorded**.
 
+The bounded realtime scheduler, direct worklet endpoint transfer, explicit
+capture/output buffer recycling, deadline checks in the AudioContext clock
+domain, and fail-open control plane are implemented and covered by deterministic
+tests. They are intentionally inactive: `models/model-lock.json` selects no
+model, and the two-browser media-capture gate remains unverified. The popup and
+content controller must therefore report unsupported without creating an
+AudioContext or claiming YouTube media.
+
 The shared Chrome/Firefox design uses `index.html?context=processing-host` as a
 hidden extension-origin iframe. A one-shot, 256-bit capability is registered in
 the memory-only background broker for the current tab. The host claims it before

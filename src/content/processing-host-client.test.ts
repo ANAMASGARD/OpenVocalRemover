@@ -7,6 +7,8 @@ describe('processing host session', () => {
     const controlPort = {
       postMessage: vi.fn(),
       close: vi.fn(),
+      start: vi.fn(),
+      onmessage: null,
     } as unknown as MessagePort
     const session = new ProcessingHostSession('session-1', iframe, controlPort)
 
@@ -24,5 +26,25 @@ describe('processing host session', () => {
     expect(controlPort.close).toHaveBeenCalledOnce()
     expect(iframe.remove).toHaveBeenCalledOnce()
     expect(() => session.openAudioEndpoint()).toThrow(/closed/)
+  })
+
+  it('forwards only validated same-session worker failures', () => {
+    const controlPort = {
+      postMessage: vi.fn(), close: vi.fn(), start: vi.fn(), onmessage: null,
+    } as unknown as MessagePort
+    const session = new ProcessingHostSession(
+      'session-1',
+      { remove: vi.fn() } as unknown as HTMLIFrameElement,
+      controlPort,
+    )
+    const listener = vi.fn()
+    session.onWorkerFailure(listener)
+    controlPort.onmessage?.({ data: {
+      type: 'processing-host-worker-failed', sessionId: 'old-session',
+    } } as MessageEvent)
+    controlPort.onmessage?.({ data: {
+      type: 'processing-host-worker-failed', sessionId: 'session-1',
+    } } as MessageEvent)
+    expect(listener).toHaveBeenCalledOnce()
   })
 })

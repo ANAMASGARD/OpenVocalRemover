@@ -27,4 +27,18 @@ describe('content processing controller', () => {
     ).toEqual({ type: 'processing-status', state: 'idle' })
     expect(lifecycle.disable).toHaveBeenCalledTimes(1)
   })
+
+  it('refuses activation before model and capture gates pass', () => {
+    const lifecycle = { enable: vi.fn(), disable: vi.fn() }
+    const controller = new ContentProcessingController(lifecycle, {
+      available: false,
+      reason: 'no-approved-model',
+    })
+    expect(controller.handlePopupCommand({
+      type: 'set-processing-enabled', enabled: true,
+    })).toEqual({
+      type: 'processing-status', state: 'unsupported', reason: 'no-approved-model',
+    })
+    expect(lifecycle.enable).not.toHaveBeenCalled()
+  })
 })

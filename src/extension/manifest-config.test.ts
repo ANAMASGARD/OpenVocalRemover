@@ -38,6 +38,10 @@ describe('manifest configuration', () => {
         resources: ['index.html'],
         matches: ['https://www.youtube.com/*'],
       },
+      {
+        resources: ['assets/causal-transport-processor-*.js'],
+        matches: ['https://www.youtube.com/*'],
+      },
     ])
     expect(JSON.stringify(manifest)).not.toContain('<all_urls>')
   })

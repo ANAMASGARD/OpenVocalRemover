@@ -9,9 +9,10 @@ separation. Other YouTube surfaces and non-YouTube pages are unsupported. The
 extension must preserve normal YouTube audio when disabled or when any part of
 processing is unavailable.
 
-The first release is Firefox-first. It uses `onnxruntime-web/wasm` with SIMD
-when supported and a single-threaded fallback. Chrome builds from the same code
-base; WebGPU is not required for the first release.
+The first release is Firefox-first. It uses the single-threaded SIMD build from
+`onnxruntime-web/wasm`; a browser without Wasm SIMD is reported as unsupported
+because the pinned runtime does not ship a non-SIMD binary. Chrome builds from
+the same code base; WebGPU is not required for the first release.
 
 ## Audio path
 

@@ -116,4 +116,29 @@ describe('reversible audio graph', () => {
     })
     expect(setup.context.createMediaElementSource).not.toHaveBeenCalled()
   })
+
+  it('keeps the processed branch connected until the fail-open ramp completes', async () => {
+    const setup = createContext()
+    let delayed: (() => void) | undefined
+    const result = await prepareReversibleAudioGraph({
+      context: setup.context,
+      mediaElement: {} as HTMLMediaElement,
+      moduleUrl: 'extension://transport-worklet.js',
+      createWorkletNode: setup.createWorklet,
+      delay: (callback, delayMs) => {
+        expect(delayMs).toBe(20)
+        delayed = callback
+      },
+    })
+    if (result.status !== 'ready') throw new Error('graph did not prepare')
+
+    const release = result.graph.releaseProcessedPath()
+    expect(setup.source.connections).toContain(setup.worklet)
+    expect(setup.worklet.connections).toContain(setup.processedGain)
+    delayed?.()
+    await release
+    expect(setup.source.connections).not.toContain(setup.worklet)
+    expect(setup.worklet.connections).not.toContain(setup.processedGain)
+    await expect(result.graph.releaseProcessedPath()).resolves.toBeUndefined()
+  })
 })

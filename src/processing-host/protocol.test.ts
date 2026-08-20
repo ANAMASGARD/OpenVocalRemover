@@ -1,8 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { ProcessingHostCapabilityBroker } from './capability-broker.ts'
-import { createProcessingHostBrokerHandler, parseHostConnectMessage } from './protocol.ts'
+import {
+  createProcessingHostBrokerHandler,
+  parseHostConnectMessage,
+  parseProcessingHostFailure,
+} from './protocol.ts'
 
 describe('processing host protocol', () => {
+  it('validates worker failure control messages', () => {
+    expect(parseProcessingHostFailure({
+      type: 'processing-host-worker-failed', sessionId: 'session-1',
+    })).toEqual({ type: 'processing-host-worker-failed', sessionId: 'session-1' })
+    expect(() => parseProcessingHostFailure({ type: 'worker-error', sessionId: 'session-1' }))
+      .toThrow(/unsupported/)
+  })
   it('binds registration and claim to the sender tab', () => {
     const broker = new ProcessingHostCapabilityBroker({ ttlMs: 10_000, maximumPending: 4 })
     const handle = createProcessingHostBrokerHandler(broker, () => 1_000)

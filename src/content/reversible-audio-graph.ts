@@ -23,12 +23,14 @@ export interface AudioGraphContext {
 }
 
 export type WorkletNodeFactory = (context: AudioGraphContext) => AudioGraphNode
+export type AudioGraphDelay = (callback: () => void, delayMs: number) => void
 
 export type PrepareAudioGraphOptions = {
   context: AudioGraphContext
   mediaElement: HTMLMediaElement
   moduleUrl: string
   createWorkletNode: WorkletNodeFactory
+  delay?: AudioGraphDelay
 }
 
 export type PreparedAudioGraphResult =
@@ -45,32 +47,45 @@ function rampGain(parameter: GainParamPort, target: number, now: number): void {
 
 /** Deep graph boundary: callers can select processed output or fail open only. */
 export class ReversibleAudioGraph {
+  private releasePromise: Promise<void> | undefined
+  private rawSelected = true
+
   constructor(
     private readonly context: AudioGraphContext,
     private readonly source: AudioGraphNode,
     private readonly worklet: AudioGraphNode,
     private readonly rawGain: GainNodePort,
     private readonly processedGain: GainNodePort,
+    private readonly delay: AudioGraphDelay,
   ) {}
 
   selectProcessed(): void {
+    this.rawSelected = false
     const now = this.context.currentTime
     rampGain(this.rawGain.gain, 0, now)
     rampGain(this.processedGain.gain, 1, now)
   }
 
   failOpen(): void {
+    this.rawSelected = true
     const now = this.context.currentTime
     rampGain(this.rawGain.gain, 1, now)
     rampGain(this.processedGain.gain, 0, now)
   }
 
   /** Removes only the processed branch; the claimed media source stays raw-audible. */
-  releaseProcessedPath(): void {
-    this.failOpen()
-    this.source.disconnect(this.worklet)
-    this.worklet.disconnect(this.processedGain)
-    this.processedGain.disconnect(this.context.destination)
+  releaseProcessedPath(): Promise<void> {
+    if (this.releasePromise !== undefined) return this.releasePromise
+    if (!this.rawSelected) this.failOpen()
+    this.releasePromise = new Promise((resolve) => {
+      this.delay(() => {
+        this.source.disconnect(this.worklet)
+        this.worklet.disconnect(this.processedGain)
+        this.processedGain.disconnect(this.context.destination)
+        resolve()
+      }, CROSSFADE_DURATION_SECONDS * 1_000)
+    })
+    return this.releasePromise
   }
 }
 
@@ -115,6 +130,7 @@ export async function prepareReversibleAudioGraph(
       worklet,
       rawGain,
       processedGain,
+      options.delay ?? ((callback, delayMs) => window.setTimeout(callback, delayMs)),
     ),
   }
 }

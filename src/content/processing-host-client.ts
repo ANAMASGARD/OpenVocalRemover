@@ -1,5 +1,8 @@
 import { getExtensionApi, sendRuntimeMessage } from '../platform/browser.ts'
-import type { ProcessingHostAuthorityResponse } from '../processing-host/protocol.ts'
+import {
+  parseProcessingHostFailure,
+  type ProcessingHostAuthorityResponse,
+} from '../processing-host/protocol.ts'
 
 const HOST_HANDSHAKE_TIMEOUT_MS = 5_000
 
@@ -28,12 +31,30 @@ function waitForIframeLoad(iframe: HTMLIFrameElement): Promise<void> {
 export class ProcessingHostSession {
   private closed = false
   private audioEndpointOpened = false
+  private readonly failureListeners = new Set<() => void>()
 
   constructor(
     readonly sessionId: string,
     private readonly iframe: HTMLIFrameElement,
     private readonly controlPort: MessagePort,
-  ) {}
+  ) {
+    this.controlPort.onmessage = (event: MessageEvent<unknown>) => {
+      try {
+        const failure = parseProcessingHostFailure(event.data)
+        if (failure.sessionId !== this.sessionId) return
+        for (const listener of this.failureListeners) listener()
+      } catch {
+        // Ignore any control-plane payload outside the closed protocol.
+      }
+    }
+    this.controlPort.start()
+  }
+
+  onWorkerFailure(listener: () => void): () => void {
+    if (this.closed) throw new Error('processing host session is closed')
+    this.failureListeners.add(listener)
+    return () => this.failureListeners.delete(listener)
+  }
 
   openAudioEndpoint(): MessagePort {
     if (this.closed) throw new Error('processing host session is closed')
@@ -50,6 +71,7 @@ export class ProcessingHostSession {
   close(): void {
     if (this.closed) return
     this.closed = true
+    this.failureListeners.clear()
     this.controlPort.postMessage({ type: 'close-processing-host', sessionId: this.sessionId })
     this.controlPort.close()
     this.iframe.remove()

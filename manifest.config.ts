@@ -54,6 +54,10 @@ export default defineManifest((env) => {
         resources: ['index.html'],
         matches: ['https://www.youtube.com/*'],
       },
+      {
+        resources: ['assets/causal-transport-processor-*.js'],
+        matches: ['https://www.youtube.com/*'],
+      },
     ],
     browser_specific_settings: {
       gecko: {

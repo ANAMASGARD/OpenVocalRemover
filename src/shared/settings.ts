@@ -14,6 +14,7 @@ export type PipelineConfiguration = {
   algorithmicLatencyFrameCount: number
   maximumCaptureQueueBlockCount: number
   maximumPlaybackQueueBlockCount: number
+  playbackStartupBlockCount: number
   maximumEndToEndLatencyMs: number
   processingDeadlineMs: number
   crossfadeDurationMs: number
@@ -35,6 +36,7 @@ export const DEFAULT_PIPELINE_CONFIGURATION: PipelineConfiguration = Object.free
   algorithmicLatencyFrameCount: 1_024,
   maximumCaptureQueueBlockCount: 4,
   maximumPlaybackQueueBlockCount: 4,
+  playbackStartupBlockCount: 2,
   maximumEndToEndLatencyMs: 100,
   processingDeadlineMs: 10,
   crossfadeDurationMs: 20,
@@ -94,12 +96,16 @@ export function validatePipelineConfiguration(
     configuration.maximumPlaybackQueueBlockCount,
     'maximumPlaybackQueueBlockCount',
   )
+  assertPositiveInteger(configuration.playbackStartupBlockCount, 'playbackStartupBlockCount')
   assertPositiveInteger(configuration.maximumEndToEndLatencyMs, 'maximumEndToEndLatencyMs')
   assertPositiveInteger(configuration.processingDeadlineMs, 'processingDeadlineMs')
   assertPositiveInteger(configuration.crossfadeDurationMs, 'crossfadeDurationMs')
 
   if (configuration.maximumEndToEndLatencyMs > 100) {
     throw new Error('maximumEndToEndLatencyMs must not exceed 100')
+  }
+  if (configuration.playbackStartupBlockCount > configuration.maximumPlaybackQueueBlockCount) {
+    throw new Error('playbackStartupBlockCount must not exceed the playback queue capacity')
   }
   if (configuration.modelHopFrameCount > configuration.modelFrameCount) {
     throw new Error('modelHopFrameCount must not exceed modelFrameCount')

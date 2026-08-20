@@ -52,11 +52,18 @@ describe('built browser manifests', () => {
         "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
       )
       const accessibleResources = manifest.web_accessible_resources ?? []
+      // CRXJS merges entries with identical match patterns and adds only the
+      // content-script chunks needed to resolve the worklet URL.
       expect(accessibleResources).toHaveLength(1)
-      expect(accessibleResources[0]?.resources).toContain('index.html')
       expect(accessibleResources[0]?.matches).toEqual(['https://www.youtube.com/*'])
+      expect(accessibleResources[0]?.resources).toContain('index.html')
+      expect(accessibleResources[0]?.resources).toContain(
+        'assets/causal-transport-processor-*.js',
+      )
       const resourcePaths = accessibleResources.flatMap((entry) => entry.resources ?? [])
       expect(resourcePaths.some((resource) => resource.endsWith('.ts'))).toBe(false)
+      expect(resourcePaths.some((resource) => /ort-wasm|inference\.worker/u.test(resource)))
+        .toBe(false)
       expect(JSON.stringify(manifest)).not.toContain('<all_urls>')
     }
 

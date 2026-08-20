@@ -34,6 +34,11 @@ export type HostConnectMessage = {
   capability: string
 }
 
+export type ProcessingHostFailure = {
+  type: 'processing-host-worker-failed'
+  sessionId: string
+}
+
 export type RuntimeSenderLike = { tab?: { id?: number } }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -68,6 +73,17 @@ export function parseHostConnectMessage(value: unknown): HostConnectMessage {
     type: 'connect-processing-host',
     sessionId: requireString(record, 'sessionId'),
     capability: requireCapability(record),
+  }
+}
+
+export function parseProcessingHostFailure(value: unknown): ProcessingHostFailure {
+  const record = asRecord(value)
+  if (record.type !== 'processing-host-worker-failed') {
+    throw new Error('unsupported processing-host control message')
+  }
+  return {
+    type: record.type,
+    sessionId: requireString(record, 'sessionId'),
   }
 }
 

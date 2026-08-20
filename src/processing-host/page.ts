@@ -50,6 +50,17 @@ export function startProcessingHostPage(): void {
       claimPending = false
 
       const worker = new Worker(new URL('../inference/inference.worker.ts', import.meta.url), { type: 'module' })
+      let workerFailureReported = false
+      const reportWorkerFailure = (): void => {
+        if (workerFailureReported) return
+        workerFailureReported = true
+        controlPort.postMessage({
+          type: 'processing-host-worker-failed',
+          sessionId: request.sessionId,
+        })
+      }
+      worker.addEventListener('error', reportWorkerFailure)
+      worker.addEventListener('messageerror', reportWorkerFailure)
       let endpointOpened = false
       controlPort.onmessage = (controlEvent: MessageEvent<unknown>) => {
         if (!isControlMessage(controlEvent.data) || controlEvent.data.sessionId !== request.sessionId) {
