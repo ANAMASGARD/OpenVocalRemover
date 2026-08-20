@@ -49,7 +49,7 @@ export function startProcessingHostPage(): void {
       connected = true
       claimPending = false
 
-      const worker = new Worker(new URL('./transport.worker.ts', import.meta.url), { type: 'module' })
+      const worker = new Worker(new URL('../inference/inference.worker.ts', import.meta.url), { type: 'module' })
       let endpointOpened = false
       controlPort.onmessage = (controlEvent: MessageEvent<unknown>) => {
         if (!isControlMessage(controlEvent.data) || controlEvent.data.sessionId !== request.sessionId) {

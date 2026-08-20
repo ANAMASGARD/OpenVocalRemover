@@ -22,6 +22,9 @@ describe('manifest configuration', () => {
     expect(manifest.action?.default_popup).toBe('index.html')
     expect(manifest.icons?.[128]).toBe('icons/icon-128.png')
     expect(manifest.permissions ?? []).toEqual(['activeTab', 'storage'])
+    expect(manifest.content_security_policy).toEqual({
+      extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
+    })
     expect(manifest.host_permissions ?? []).toEqual(['https://www.youtube.com/watch*'])
     expect(manifest.content_scripts).toEqual([
       {
@@ -53,6 +56,9 @@ describe('manifest configuration', () => {
 
     expect(manifest.background).toEqual({
       scripts: ['src/background/index.ts'],
+    })
+    expect(manifest.content_security_policy).toEqual({
+      extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
     })
   })
 

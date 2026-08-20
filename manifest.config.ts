@@ -38,6 +38,9 @@ export default defineManifest((env) => {
           type: 'module',
         },
     permissions: ['activeTab', 'storage'],
+    content_security_policy: {
+      extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
+    },
     host_permissions: ['https://www.youtube.com/watch*'],
     content_scripts: [
       {

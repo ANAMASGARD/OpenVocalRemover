@@ -10,7 +10,19 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), ...crx({ manifest, browser })],
-    build: { outDir: getBuildOutputDir(browser) },
+    resolve: {
+      // ORT's external-Wasm export keeps the Emscripten module and binary as
+      // separately packaged extension assets instead of embedding a worker.
+      conditions: [
+        'onnxruntime-web-use-extern-wasm',
+        'module',
+        'browser',
+        'development|production',
+      ],
+    },
+    build: {
+      outDir: getBuildOutputDir(browser),
+    },
     // Keep Chrome and Firefox HMR servers on distinct ports even if a caller
     // omits `--port` when launching `vite --mode firefox`.
     server: {

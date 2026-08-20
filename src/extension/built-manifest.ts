@@ -16,6 +16,7 @@ export type BuiltManifest = {
   manifest_version: number
   background?: BuiltManifestBackground
   permissions?: string[]
+  content_security_policy?: { extension_pages?: string }
   host_permissions?: string[]
   content_scripts?: Array<{
     matches?: string[]
