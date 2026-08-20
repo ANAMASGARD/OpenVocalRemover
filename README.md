@@ -5,9 +5,10 @@ local AI vocal reduction** on explicitly activated, supported YouTube watch
 pages. Audio, model inference, and derived buffers stay on the user's device.
 
 The current codebase supplies an accessible popup, separate browser build
-targets, and an inactive YouTube watch-page lifecycle. It does not yet alter
-audio or include a model. Its only requested permissions are `activeTab` and
-`storage`, with a content-script match limited to
+targets, a bounded AudioWorklet/worker transport, local ONNX Runtime Wasm
+packaging, and fail-open lifecycle controls. It does not yet alter audio or
+include an approved model, so activation remains disabled. Its only requested
+permissions are `activeTab` and `storage`, with a content-script match limited to
 `https://www.youtube.com/watch*`. The staged implementation roadmap is in
 [the Firefox-first plan](docs/superpowers/plans/2026-08-12-firefox-wasm-vocal-reduction.md).
 
@@ -37,7 +38,8 @@ contracts.
 
 ## Requirements
 
-- Node.js 20.19+ or 22.12+
+- Node.js 24.14+ within major version 24
+- npm 11.9+ within major version 11
 - Google Chrome/Chromium and/or Firefox
 
 ## Development
@@ -73,6 +75,19 @@ npm run build:firefox
 ```
 
 Load `dist/chrome/` in Chrome after `npm run build`, and use `dist/firefox/manifest.json` after `npm run build:firefox`. For Firefox store distribution, package and sign the built extension through AMO; the manifest already has its permanent Gecko ID and declares that it collects no data.
+
+Create auditable local package previews with:
+
+```bash
+npm run package:firefox:preview
+npm run package:source
+```
+
+Production packaging is deliberately blocked until an approved model and
+complete clean-profile Firefox evidence exist. See the
+[release checklist](docs/release-checklist.md),
+[Firefox submission guide](docs/firefox-submission.md), and
+[current Chrome status](docs/chrome-status.md).
 
 ## Project boundaries
 

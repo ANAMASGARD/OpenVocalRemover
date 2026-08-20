@@ -20,6 +20,7 @@
   },
   "include": [
     "src",
+    "scripts",
     "build-target.ts",
     "manifest.config.ts",
     "vite.config.ts",
