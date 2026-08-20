@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "selectedModelId": null,
+  "candidates": [
+    {
+      "id": "band-scnet-causal",
+      "status": "research-only",
+      "architecture": "causal Band-SCNet",
+      "sourceUrl": "https://www.isca-archive.org/interspeech_2025/yang25d_interspeech.html",
+      "sourceRevision": "Interspeech 2025 publication",
+      "decisionReason": "Promising published causal architecture, but no author-provided licensed weights or reproducible ONNX artifact were found."
+    },
+    {
+      "id": "hs-tasnet-small",
+      "status": "research-only",
+      "architecture": "HS-TasNet-Small",
+      "sourceUrl": "https://www.l-acoustics.com/wp-content/uploads/2024/04/real_time_demixer_2024_04_19.pdf",
+      "sourceRevision": "2024-04-19 author paper",
+      "decisionReason": "Published low-latency results are relevant, but no author-provided pretrained ONNX artifact was found."
+    },
+    {
+      "id": "stemgen-rt-hs-tasnet",
+      "status": "blocked",
+      "architecture": "HS-TasNet streaming ONNX",
+      "sourceUrl": "https://github.com/sweetspotsoundsystem/stemgen-rt",
+      "sourceRevision": "reviewed 2026-08-20",
+      "decisionReason": "Concrete streaming graph, but its model files exceed the 150 MiB package budget and lack sufficient weight, training, export, and browser-Wasm evidence."
+    },
+    {
+      "id": "xumx-slicq-realtime",
+      "status": "blocked",
+      "architecture": "xumx-sliCQ realtime mask network",
+      "sourceUrl": "https://github.com/sevagh/xumx-sliCQ",
+      "sourceRevision": "reviewed 2026-08-20",
+      "decisionReason": "The ONNX file omits required custom NSGT preprocessing and a verified persistent streaming-state interface."
+    },
+    {
+      "id": "spleeter-2stem-onnx",
+      "status": "blocked",
+      "architecture": "Spleeter two-stem spectrogram model",
+      "sourceUrl": "https://github.com/k2-fsa/sherpa/blob/master/docs/source/onnx/source-separation/models.rst",
+      "sourceRevision": "reviewed 2026-08-20",
+      "decisionReason": "The published ONNX path is offline and uses multi-second future context, so it cannot satisfy the causal 100 ms live contract."
+    }
+  ]
+}
