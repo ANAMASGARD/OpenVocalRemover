@@ -14,7 +14,7 @@ function startYouTubeWatchLifecycle(): void {
 
   const lifecycle = new YouTubeVideoLifecycle(
     () => findYouTubeWatchVideo(document),
-    // Selection has no audio side effects until the media controller is added.
+    // Capture remains unclaimed until the explicit two-browser probe passes.
     () => undefined,
   )
   const controller = new ContentProcessingController(lifecycle)
