@@ -9,16 +9,19 @@ import type { ReversibleAudioGraph } from './reversible-audio-graph.ts'
 export type CaptureCapability = 'unverified' | 'verified'
 
 export type RealtimePipelineAvailability =
-  | { available: false; reason: 'no-approved-model' | 'capture-unverified' }
-  | { available: true }
+  | { available: false; reason: 'no-approved-model'; modelId?: never }
+  | { available: false; reason: 'capture-unverified'; modelId: string }
+  | { available: true; modelId: string }
 
 export function assessRealtimePipelineAvailability(
   selection: ModelSelection,
   captureCapability: CaptureCapability,
 ): RealtimePipelineAvailability {
   if (!selection.available) return selection
-  if (captureCapability !== 'verified') return { available: false, reason: 'capture-unverified' }
-  return { available: true }
+  if (captureCapability !== 'verified') {
+    return { available: false, reason: 'capture-unverified', modelId: selection.model.id }
+  }
+  return { available: true, modelId: selection.model.id }
 }
 
 export type PipelineStopReason =

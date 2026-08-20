@@ -1,7 +1,8 @@
 import type { ChannelCount } from './audio.ts'
 
-export type ProcessingSettings = {
-  enabled: boolean
+export type ProcessingPreferences = {
+  schemaVersion: 1
+  processedMix: number
 }
 
 export type PipelineConfiguration = {
@@ -21,8 +22,11 @@ export type PipelineConfiguration = {
   modelId: string
 }
 
-export const DEFAULT_PROCESSING_SETTINGS: ProcessingSettings = Object.freeze({
-  enabled: false,
+export const PROCESSING_PREFERENCES_STORAGE_KEY = 'processingPreferences'
+
+export const DEFAULT_PROCESSING_PREFERENCES: ProcessingPreferences = Object.freeze({
+  schemaVersion: 1,
+  processedMix: 0.75,
 })
 
 /** Safe placeholder profile; Task 9 must approve a real model before activation. */
@@ -53,12 +57,19 @@ function assertPositiveInteger(value: number, label: string): void {
   }
 }
 
-/** Reads persisted settings while treating malformed storage as disabled. */
-export function parseProcessingSettings(value: unknown): ProcessingSettings {
-  if (!isRecord(value) || typeof value.enabled !== 'boolean') {
-    return { ...DEFAULT_PROCESSING_SETTINGS }
+/** Reads the one persisted mix preference; activation is deliberately per-tab. */
+export function parseProcessingPreferences(value: unknown): ProcessingPreferences {
+  if (
+    !isRecord(value)
+    || value.schemaVersion !== 1
+    || typeof value.processedMix !== 'number'
+    || !Number.isFinite(value.processedMix)
+    || value.processedMix < 0
+    || value.processedMix > 1
+  ) {
+    return { ...DEFAULT_PROCESSING_PREFERENCES }
   }
-  return { enabled: value.enabled }
+  return { schemaVersion: 1, processedMix: value.processedMix }
 }
 
 export function calculateWorstCasePipelineLatencyMs(

@@ -101,6 +101,9 @@ typed interface plus parity tests against a TypeScript reference.
 Any error, unsupported capability, worker failure, queue overflow/underflow,
 deadline miss, navigation, or disable action restores original audio promptly.
 The popup must display this bypass state rather than imply processing continues.
+Activation is never persisted: it is an explicit per-tab action. The only
+stored popup value is a versioned processed/original signal-mix preference;
+that value is not presented as a percentage of guaranteed vocal removal.
 
 The implemented feature must request only the permissions and YouTube host
 matches it needs. It must not request `<all_urls>`. Diagnostics, if introduced,

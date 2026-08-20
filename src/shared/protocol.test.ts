@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   getWorkerRequestTransferables,
   parsePopupCommand,
+  parseProcessingStatus,
   parseWorkerRequest,
   parseWorkerResponse,
   type WorkerRequest,
@@ -33,6 +34,27 @@ describe('extension processing protocol', () => {
     expect(() => parsePopupCommand({ type: 'set-processing-enabled', enabled: 'true' })).toThrow(
       /enabled/,
     )
+  })
+
+  it('validates complete popup status without accepting arbitrary reasons', () => {
+    expect(parseProcessingStatus({
+      type: 'processing-status',
+      state: 'unsupported',
+      enabled: false,
+      reason: 'no-approved-model',
+      model: null,
+      backend: null,
+      bufferedLatencyMs: null,
+    })).toMatchObject({ state: 'unsupported', reason: 'no-approved-model' })
+    expect(() => parseProcessingStatus({
+      type: 'processing-status',
+      state: 'unsupported',
+      enabled: false,
+      reason: '/private/path',
+      model: null,
+      backend: null,
+      bufferedLatencyMs: null,
+    })).toThrow(/reason/)
   })
 
   it('validates worker process messages and transfers audio buffers deliberately', () => {

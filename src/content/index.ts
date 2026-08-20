@@ -65,7 +65,11 @@ function startYouTubeWatchLifecycle(): void {
       sendResponse({
         type: 'processing-status',
         state: 'failed',
-        reason: 'Invalid extension command.',
+        enabled: false,
+        reason: 'invalid-command',
+        model: null,
+        backend: null,
+        bufferedLatencyMs: null,
       })
     }
   })

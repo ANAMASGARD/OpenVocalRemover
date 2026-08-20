@@ -54,7 +54,7 @@ describe('realtime audio pipeline control plane', () => {
       available: true, model: { id: 'fixture', approval: {} },
     } as ModelSelection
     expect(assessRealtimePipelineAvailability(selected, 'unverified')).toEqual({
-      available: false, reason: 'capture-unverified',
+      available: false, reason: 'capture-unverified', modelId: 'fixture',
     })
   })
 

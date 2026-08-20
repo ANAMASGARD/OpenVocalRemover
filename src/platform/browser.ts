@@ -30,6 +30,13 @@ export async function sendRuntimeMessage<TResponse>(
   return api.runtime.sendMessage(message) as Promise<TResponse>
 }
 
+/** Send a validated command to one explicitly selected tab. */
+export async function sendTabMessage<TResponse>(tabId: number, message: unknown): Promise<TResponse> {
+  if (!Number.isInteger(tabId) || tabId < 0) throw new Error('tabId must be a non-negative integer')
+  const api = requireExtensionApi()
+  return api.tabs.sendMessage(tabId, message) as Promise<TResponse>
+}
+
 /** Read values from `browser.storage.local` / `chrome.storage.local`. */
 export async function getLocalStorage(
   keys?: string | string[] | LocalStorageValues | null,

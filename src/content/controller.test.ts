@@ -12,11 +12,16 @@ describe('content processing controller', () => {
     expect(controller.handlePopupCommand({ type: 'get-processing-status' })).toEqual({
       type: 'processing-status',
       state: 'idle',
+      enabled: false,
+      reason: null,
+      model: null,
+      backend: null,
+      bufferedLatencyMs: null,
     })
 
     expect(
       controller.handlePopupCommand({ type: 'set-processing-enabled', enabled: true }),
-    ).toEqual({ type: 'processing-status', state: 'probing' })
+    ).toMatchObject({ type: 'processing-status', state: 'probing', enabled: true })
     expect(lifecycle.enable).toHaveBeenCalledTimes(1)
 
     controller.handlePopupCommand({ type: 'set-processing-enabled', enabled: true })
@@ -24,7 +29,7 @@ describe('content processing controller', () => {
 
     expect(
       controller.handlePopupCommand({ type: 'set-processing-enabled', enabled: false }),
-    ).toEqual({ type: 'processing-status', state: 'idle' })
+    ).toMatchObject({ type: 'processing-status', state: 'idle', enabled: false })
     expect(lifecycle.disable).toHaveBeenCalledTimes(1)
   })
 
@@ -37,7 +42,13 @@ describe('content processing controller', () => {
     expect(controller.handlePopupCommand({
       type: 'set-processing-enabled', enabled: true,
     })).toEqual({
-      type: 'processing-status', state: 'unsupported', reason: 'no-approved-model',
+      type: 'processing-status',
+      state: 'unsupported',
+      enabled: false,
+      reason: 'no-approved-model',
+      model: null,
+      backend: null,
+      bufferedLatencyMs: null,
     })
     expect(lifecycle.enable).not.toHaveBeenCalled()
   })

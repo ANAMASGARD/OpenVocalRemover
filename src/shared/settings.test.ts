@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_PIPELINE_CONFIGURATION,
-  DEFAULT_PROCESSING_SETTINGS,
+  DEFAULT_PROCESSING_PREFERENCES,
   calculateWorstCasePipelineLatencyMs,
-  parseProcessingSettings,
+  parseProcessingPreferences,
   validatePipelineConfiguration,
 } from './settings.ts'
 
 describe('processing settings', () => {
   it('defaults to disabled processing and a causal pipeline within 100 milliseconds', () => {
-    expect(DEFAULT_PROCESSING_SETTINGS).toEqual({ enabled: false })
+    expect(DEFAULT_PROCESSING_PREFERENCES).toEqual({ schemaVersion: 1, processedMix: 0.75 })
     expect(DEFAULT_PIPELINE_CONFIGURATION.maximumEndToEndLatencyMs).toBe(100)
     expect(DEFAULT_PIPELINE_CONFIGURATION.maximumCaptureQueueBlockCount).toBe(4)
     expect(DEFAULT_PIPELINE_CONFIGURATION.maximumPlaybackQueueBlockCount).toBe(4)
@@ -21,9 +21,13 @@ describe('processing settings', () => {
   })
 
   it('recovers safely from malformed stored settings', () => {
-    expect(parseProcessingSettings({ enabled: true })).toEqual({ enabled: true })
-    expect(parseProcessingSettings({ enabled: 'yes' })).toEqual(DEFAULT_PROCESSING_SETTINGS)
-    expect(parseProcessingSettings(null)).toEqual(DEFAULT_PROCESSING_SETTINGS)
+    expect(parseProcessingPreferences({ schemaVersion: 1, processedMix: 0.6 })).toEqual({
+      schemaVersion: 1, processedMix: 0.6,
+    })
+    expect(parseProcessingPreferences({ schemaVersion: 1, processedMix: 2 }))
+      .toEqual(DEFAULT_PROCESSING_PREFERENCES)
+    expect(parseProcessingPreferences({ enabled: true })).toEqual(DEFAULT_PROCESSING_PREFERENCES)
+    expect(parseProcessingPreferences(null)).toEqual(DEFAULT_PROCESSING_PREFERENCES)
   })
 
   it('rejects a configuration that violates the causal latency contract', () => {

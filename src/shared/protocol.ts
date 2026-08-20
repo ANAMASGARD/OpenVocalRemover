@@ -17,6 +17,23 @@ export type ProcessingState =
 
 export type InferenceBackend = 'wasm-simd' | 'wasm'
 
+export type ProcessingReasonCode =
+  | 'no-active-tab'
+  | 'unsupported-page'
+  | 'content-unavailable'
+  | 'no-approved-model'
+  | 'capture-unverified'
+  | 'worker-failure'
+  | 'deadline-miss'
+  | 'capture-overflow'
+  | 'playback-overflow'
+  | 'playback-underflow'
+  | 'invalid-block'
+  | 'incompatible-block'
+  | 'stale-session'
+  | 'discontinuous-block'
+  | 'invalid-command'
+
 export type PopupCommand =
   | { type: 'get-processing-status' }
   | { type: 'set-processing-enabled'; enabled: boolean }
@@ -24,8 +41,23 @@ export type PopupCommand =
 export type ProcessingStatus = {
   type: 'processing-status'
   state: ProcessingState
-  reason?: string
+  enabled: boolean
+  reason: ProcessingReasonCode | null
+  model: { id: string; label: string } | null
+  backend: InferenceBackend | null
+  bufferedLatencyMs: number | null
 }
+
+const PROCESSING_STATES = new Set<ProcessingState>([
+  'idle', 'awaiting-activation', 'probing', 'warming', 'processing',
+  'bypassed', 'unsupported', 'failed',
+])
+const PROCESSING_REASON_CODES = new Set<ProcessingReasonCode>([
+  'no-active-tab', 'unsupported-page', 'content-unavailable', 'no-approved-model',
+  'capture-unverified', 'worker-failure', 'deadline-miss', 'capture-overflow',
+  'playback-overflow', 'playback-underflow', 'invalid-block', 'incompatible-block',
+  'stale-session', 'discontinuous-block', 'invalid-command',
+])
 
 export type WorkerRequest =
   | {
@@ -117,6 +149,45 @@ export function parsePopupCommand(value: unknown): PopupCommand {
   }
 
   throw new Error(`Unsupported popup command type: ${JSON.stringify(type)}`)
+}
+
+/** Validates status returned from a content script before the popup renders it. */
+export function parseProcessingStatus(value: unknown): ProcessingStatus {
+  const record = asRecord(value, 'processing status')
+  if (record.type !== 'processing-status') throw new Error('processing status.type is invalid')
+  if (!PROCESSING_STATES.has(record.state as ProcessingState)) {
+    throw new Error('processing status.state is invalid')
+  }
+  if (typeof record.enabled !== 'boolean') throw new Error('processing status.enabled must be boolean')
+  if (record.reason !== null && !PROCESSING_REASON_CODES.has(record.reason as ProcessingReasonCode)) {
+    throw new Error('processing status.reason is invalid')
+  }
+  let model: ProcessingStatus['model'] = null
+  if (record.model !== null) {
+    const candidate = asRecord(record.model, 'processing status.model')
+    model = {
+      id: readString(candidate, 'id', 'processing status.model'),
+      label: readString(candidate, 'label', 'processing status.model'),
+    }
+  }
+  if (record.backend !== null && record.backend !== 'wasm-simd' && record.backend !== 'wasm') {
+    throw new Error('processing status.backend is invalid')
+  }
+  if (
+    record.bufferedLatencyMs !== null
+    && (typeof record.bufferedLatencyMs !== 'number'
+      || !Number.isFinite(record.bufferedLatencyMs)
+      || record.bufferedLatencyMs < 0)
+  ) throw new Error('processing status.bufferedLatencyMs is invalid')
+  return {
+    type: record.type,
+    state: record.state as ProcessingState,
+    enabled: record.enabled,
+    reason: record.reason as ProcessingReasonCode | null,
+    model,
+    backend: record.backend as InferenceBackend | null,
+    bufferedLatencyMs: record.bufferedLatencyMs as number | null,
+  }
 }
 
 /** Parses one worker request before it is allowed into the inference queue. */
