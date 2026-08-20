@@ -3,7 +3,11 @@
 export type ChannelCount = 1 | 2
 
 export type AudioBlockFixture = {
+  sessionId: string
   sequence: number
+  startFrame: number
+  capturedAtMs: number
+  deadlineAtMs: number
   sampleRateHz: number
   channelCount: ChannelCount
   frameCount: number
@@ -11,7 +15,11 @@ export type AudioBlockFixture = {
 }
 
 export type CreateAudioBlockOptions = {
+  sessionId?: string
   sequence?: number
+  startFrame?: number
+  capturedAtMs?: number
+  deadlineAtMs?: number
   sampleRateHz?: number
   channelCount?: ChannelCount
   frameCount?: number
@@ -26,9 +34,13 @@ export function createAudioBlockFixture(
   options: CreateAudioBlockOptions = {},
 ): AudioBlockFixture {
   const sequence = options.sequence ?? 0
+  const sessionId = options.sessionId ?? 'fixture-session'
   const sampleRateHz = options.sampleRateHz ?? DEFAULT_SAMPLE_RATE_HZ
   const channelCount = options.channelCount ?? 2
   const frameCount = options.frameCount ?? DEFAULT_FRAME_COUNT
+  const startFrame = options.startFrame ?? sequence * frameCount
+  const capturedAtMs = options.capturedAtMs ?? 1_000
+  const deadlineAtMs = options.deadlineAtMs ?? capturedAtMs + 90
   const fill = options.fill ?? 0
 
   const frames: Float32Array[] = []
@@ -37,7 +49,11 @@ export function createAudioBlockFixture(
   }
 
   return {
+    sessionId,
     sequence,
+    startFrame,
+    capturedAtMs,
+    deadlineAtMs,
     sampleRateHz,
     channelCount,
     frameCount,

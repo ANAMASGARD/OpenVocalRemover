@@ -110,7 +110,7 @@ Files: `package.json`, `vite.config.ts`, `src/extension/*`, `src/**/*.test.ts`,
 Acceptance: the two built manifests are inspected in tests: Firefox uses
 `background.scripts`; Chrome uses `background.service_worker` only.
 
-### 3. `feat: add typed audio, settings, and lifecycle protocol`
+### 3. `feat: add typed audio, settings, and lifecycle protocol` ✅
 
 Files: `src/shared/protocol.ts`, `src/shared/audio.ts`, `src/shared/settings.ts`,
 unit tests.
@@ -132,25 +132,25 @@ export type WorkerResponse =
   | { type: 'failure'; operation: string; message: string };
 ```
 
-- Validate every received message and transfer `ArrayBuffer`s rather than cloning
+- [x] Validate every received message and transfer `ArrayBuffer`s rather than cloning
   large audio payloads.
-- Centralise sample rate, channels, chunk size, 2--3 second latency, queue cap,
+- [x] Centralise sample rate, channels, chunk size, 2--3 second latency, queue cap,
   deadline, and model identifier in a typed configuration module.
 
 Acceptance: malformed messages, sequence gaps, transfer ownership, and settings
 defaults have focused unit tests.
 
-### 4. `feat: inject a minimal YouTube lifecycle content script`
+### 4. `feat: inject a minimal YouTube lifecycle content script` ✅
 
 Files: `manifest.config.ts`, `src/content/index.ts`, `src/content/youtube.ts`,
 content-script tests.
 
-- Request only `storage`, `activeTab`, and narrow `https://www.youtube.com/*`
+- [x] Request only `storage`, `activeTab`, and narrow `https://www.youtube.com/*`
   host matches needed for the feature; do not request `<all_urls>`.
-- Detect the active `HTMLVideoElement` after initial navigation and SPA route
+- [x] Detect the active `HTMLVideoElement` after initial navigation and SPA route
   changes. Ignore pages with no valid playable video.
-- Expose idempotent `attach`, `detach`, `enable`, and `disable` operations.
-- Keep it inactive until an explicit popup toggle requests activation.
+- [x] Expose idempotent `attach`, `detach`, `enable`, and `disable` operations.
+- [x] Keep it inactive until an explicit popup toggle requests activation.
 
 Acceptance: repeated YouTube route changes create no duplicate observer or graph;
 non-YouTube pages receive no content script; disabling is safe before activation.

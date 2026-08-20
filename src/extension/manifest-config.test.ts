@@ -14,15 +14,36 @@ async function resolveManifest(mode: string) {
 }
 
 describe('manifest configuration', () => {
-  it('defines the shared popup foundation without host permissions', async () => {
+  it('registers only an inactive YouTube watch-page content-script foundation', async () => {
     const manifest = await resolveManifest('production')
 
     expect(manifest.manifest_version).toBe(3)
     expect(manifest.name).toBe('Open Vocal Remover')
     expect(manifest.action?.default_popup).toBe('index.html')
     expect(manifest.icons?.[128]).toBe('icons/icon-128.png')
-    expect(manifest.permissions ?? []).toEqual([])
-    expect(manifest.host_permissions ?? []).toEqual([])
+    expect(manifest.permissions ?? []).toEqual(['activeTab', 'storage'])
+    expect(manifest.content_security_policy).toEqual({
+      extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
+    })
+    expect(manifest.host_permissions ?? []).toEqual(['https://www.youtube.com/watch*'])
+    expect(manifest.content_scripts).toEqual([
+      {
+        matches: ['https://www.youtube.com/watch*'],
+        js: ['src/content/index.ts'],
+        run_at: 'document_idle',
+      },
+    ])
+    expect(manifest.web_accessible_resources).toEqual([
+      {
+        resources: ['index.html'],
+        matches: ['https://www.youtube.com/*'],
+      },
+      {
+        resources: ['assets/causal-transport-processor-*.js'],
+        matches: ['https://www.youtube.com/*'],
+      },
+    ])
+    expect(JSON.stringify(manifest)).not.toContain('<all_urls>')
   })
 
   it('uses Chrome service_worker background for non-Firefox modes', async () => {
@@ -39,6 +60,9 @@ describe('manifest configuration', () => {
 
     expect(manifest.background).toEqual({
       scripts: ['src/background/index.ts'],
+    })
+    expect(manifest.content_security_policy).toEqual({
+      extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
     })
   })
 

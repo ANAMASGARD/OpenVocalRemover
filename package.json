@@ -3,17 +3,26 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=24.14 <25",
+    "npm": ">=11.9 <12"
+  },
   "scripts": {
     "dev": "vite",
     "dev:firefox": "vite --mode firefox --port 5174",
     "build": "vite build",
     "build:firefox": "vite build --mode firefox",
     "lint": "eslint .",
+    "package:firefox": "node scripts/package-firefox.mts",
+    "package:firefox:preview": "node scripts/package-firefox.mts --preview",
+    "package:source": "node scripts/package-source.mts",
     "preview": "vite preview",
+    "smoke:firefox": "node scripts/firefox-smoke.mts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "onnxruntime-web": "1.27.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

@@ -5,6 +5,7 @@ import {
   getExtensionApi,
   getLocalStorage,
   sendRuntimeMessage,
+  sendTabMessage,
   setLocalStorage,
 } from './browser.ts'
 
@@ -21,6 +22,7 @@ type ChromeMock = {
   }
   tabs: {
     query: ReturnType<typeof vi.fn>
+    sendMessage: ReturnType<typeof vi.fn>
   }
 }
 
@@ -40,6 +42,7 @@ function installChromeMock(partial?: Partial<ChromeMock>): ChromeMock {
     },
     tabs: {
       query: vi.fn(),
+      sendMessage: vi.fn(),
       ...partial?.tabs,
     },
   }
@@ -65,6 +68,16 @@ describe('browser abstraction', () => {
 
     await expect(sendRuntimeMessage({ type: 'ping' })).resolves.toEqual({ ok: true })
     expect(chromeMock.runtime.sendMessage).toHaveBeenCalledWith({ type: 'ping' })
+  })
+
+  it('sends a command only to the selected tab id', async () => {
+    const chromeMock = installChromeMock()
+    chromeMock.tabs.sendMessage.mockResolvedValue({ type: 'processing-status' })
+    await sendTabMessage(42, { type: 'get-processing-status' })
+    expect(chromeMock.tabs.sendMessage).toHaveBeenCalledWith(
+      42, { type: 'get-processing-status' },
+    )
+    await expect(sendTabMessage(-1, {})).rejects.toThrow(/tabId/)
   })
 
   it('reads and writes local storage', async () => {

@@ -15,6 +15,18 @@ export type BuiltManifestBackground = {
 export type BuiltManifest = {
   manifest_version: number
   background?: BuiltManifestBackground
+  permissions?: string[]
+  content_security_policy?: { extension_pages?: string }
+  host_permissions?: string[]
+  content_scripts?: Array<{
+    matches?: string[]
+    js?: string[]
+    run_at?: string
+  }>
+  web_accessible_resources?: Array<{
+    matches?: string[]
+    resources?: string[]
+  }>
   [key: string]: unknown
 }
 
@@ -57,5 +69,38 @@ export function assertFirefoxBackgroundShape(manifest: BuiltManifest): void {
 
   if (background.service_worker !== undefined) {
     throw new Error('Firefox manifest must not define background.service_worker')
+  }
+}
+
+/** Verifies the generated content script remains limited to YouTube watch pages. */
+export function assertYouTubeContentScriptShape(manifest: BuiltManifest): void {
+  const expectedMatch = 'https://www.youtube.com/watch*'
+
+  if (manifest.permissions?.includes('<all_urls>')) {
+    throw new Error('Extension permissions must not include <all_urls>')
+  }
+  if (manifest.host_permissions?.some((match) => match === '<all_urls>')) {
+    throw new Error('Extension host_permissions must not include <all_urls>')
+  }
+  if (manifest.host_permissions?.length !== 1 || manifest.host_permissions[0] !== expectedMatch) {
+    throw new Error('Extension host_permissions must contain only the YouTube watch-page match')
+  }
+
+  const contentScript = manifest.content_scripts?.find(
+    (entry) => entry.matches?.length === 1 && entry.matches[0] === expectedMatch,
+  )
+  if (
+    contentScript === undefined
+    || contentScript.js === undefined
+    || contentScript.js.length === 0
+    || contentScript.run_at !== 'document_idle'
+  ) {
+    throw new Error('Manifest must include a document-idle YouTube watch-page content script')
+  }
+
+  for (const resource of manifest.web_accessible_resources ?? []) {
+    if (resource.matches?.includes('<all_urls>')) {
+      throw new Error('Content script resources must not be exposed to <all_urls>')
+    }
   }
 }

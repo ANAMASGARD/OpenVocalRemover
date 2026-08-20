@@ -37,8 +37,28 @@ export default defineManifest((env) => {
           service_worker: BACKGROUND_ENTRY,
           type: 'module',
         },
-    permissions: [],
-    host_permissions: [],
+    permissions: ['activeTab', 'storage'],
+    content_security_policy: {
+      extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
+    },
+    host_permissions: ['https://www.youtube.com/watch*'],
+    content_scripts: [
+      {
+        matches: ['https://www.youtube.com/watch*'],
+        js: ['src/content/index.ts'],
+        run_at: 'document_idle',
+      },
+    ],
+    web_accessible_resources: [
+      {
+        resources: ['index.html'],
+        matches: ['https://www.youtube.com/*'],
+      },
+      {
+        resources: ['assets/causal-transport-processor-*.js'],
+        matches: ['https://www.youtube.com/*'],
+      },
+    ],
     browser_specific_settings: {
       gecko: {
         id: 'open-vocal-remover@extension.local',
