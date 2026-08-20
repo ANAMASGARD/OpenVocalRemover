@@ -87,7 +87,9 @@ Production packaging is deliberately blocked until an approved model and
 complete clean-profile Firefox evidence exist. See the
 [release checklist](docs/release-checklist.md),
 [Firefox submission guide](docs/firefox-submission.md), and
-[current Chrome status](docs/chrome-status.md).
+[current Chrome status](docs/chrome-status.md). The
+[native-Wasm decision](docs/native-wasm.md) explains why no C++ module is added
+without profiler evidence.
 
 ## Project boundaries
 
