@@ -1,14 +1,13 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { PopupApp } from './popup/PopupApp'
-import './index.css'
+async function startExtensionPage(): Promise<void> {
+  const context = new URLSearchParams(window.location.search).get('context')
+  if (context === 'processing-host') {
+    const { startProcessingHostPage } = await import('./processing-host/page.ts')
+    startProcessingHostPage()
+    return
+  }
 
-const root = document.getElementById('root')
+  const { mountPopup } = await import('./popup/mount.tsx')
+  mountPopup()
+}
 
-if (!root) throw new Error('Popup root element was not found.')
-
-createRoot(root).render(
-  <StrictMode>
-    <PopupApp />
-  </StrictMode>,
-)
+void startExtensionPage()

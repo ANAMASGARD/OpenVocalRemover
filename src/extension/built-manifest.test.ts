@@ -35,5 +35,15 @@ describe('built browser manifests', () => {
     expect(firefoxManifest.background?.scripts).toEqual(['service-worker-loader.js'])
     expect(chromeManifest.background).not.toHaveProperty('scripts')
     expect(firefoxManifest.background).not.toHaveProperty('service_worker')
+
+    for (const manifest of [chromeManifest, firefoxManifest]) {
+      const accessibleResources = manifest.web_accessible_resources ?? []
+      expect(accessibleResources).toHaveLength(1)
+      expect(accessibleResources[0]?.resources).toContain('index.html')
+      expect(accessibleResources[0]?.matches).toEqual(['https://www.youtube.com/*'])
+      const resourcePaths = accessibleResources.flatMap((entry) => entry.resources ?? [])
+      expect(resourcePaths.some((resource) => resource.endsWith('.ts'))).toBe(false)
+      expect(JSON.stringify(manifest)).not.toContain('<all_urls>')
+    }
   })
 })

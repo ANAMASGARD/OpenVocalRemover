@@ -46,6 +46,12 @@ export default defineManifest((env) => {
         run_at: 'document_idle',
       },
     ],
+    web_accessible_resources: [
+      {
+        resources: ['index.html'],
+        matches: ['https://www.youtube.com/*'],
+      },
+    ],
     browser_specific_settings: {
       gecko: {
         id: 'open-vocal-remover@extension.local',

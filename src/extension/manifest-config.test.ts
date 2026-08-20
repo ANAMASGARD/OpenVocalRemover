@@ -30,7 +30,12 @@ describe('manifest configuration', () => {
         run_at: 'document_idle',
       },
     ])
-    expect(manifest.web_accessible_resources ?? []).toEqual([])
+    expect(manifest.web_accessible_resources).toEqual([
+      {
+        resources: ['index.html'],
+        matches: ['https://www.youtube.com/*'],
+      },
+    ])
     expect(JSON.stringify(manifest)).not.toContain('<all_urls>')
   })
 
