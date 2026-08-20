@@ -4,10 +4,12 @@ Open Vocal Remover is a free, open-source browser extension for **best-effort,
 local AI vocal reduction** on explicitly activated, supported YouTube watch
 pages. Audio, model inference, and derived buffers stay on the user's device.
 
-The current codebase is still the extension foundation: it supplies an
-accessible popup and build targets, but it does not yet alter audio, request
-browser permissions, or include a model. The staged implementation roadmap is
-in [the Firefox-first plan](docs/superpowers/plans/2026-08-12-firefox-wasm-vocal-reduction.md).
+The current codebase supplies an accessible popup, separate browser build
+targets, and an inactive YouTube watch-page lifecycle. It does not yet alter
+audio or include a model. Its only requested permissions are `activeTab` and
+`storage`, with a content-script match limited to
+`https://www.youtube.com/watch*`. The staged implementation roadmap is in
+[the Firefox-first plan](docs/superpowers/plans/2026-08-12-firefox-wasm-vocal-reduction.md).
 
 ## Product boundaries
 
@@ -85,7 +87,9 @@ Load `dist/chrome/` in Chrome after `npm run build`, and use `dist/firefox/manif
   tests.
 - `src/background/` is a minimal MV3 background entry so Chrome and Firefox
   builds emit the correct background shape. Feature behavior is added later.
-- `src/content/` remains reserved until the YouTube lifecycle feature lands.
+- `src/content/` owns the inactive YouTube watch-page lifecycle and later the
+  reversible media controller. It must never depend on YouTube private state or
+  alter audio before explicit user activation.
 - Future audio work uses `src/audio-worklets/` for real-time capture/playback
   and `src/worker/` for inference. Inference and model details must not be put
   into popup components or an audio render callback.

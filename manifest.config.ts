@@ -37,8 +37,15 @@ export default defineManifest((env) => {
           service_worker: BACKGROUND_ENTRY,
           type: 'module',
         },
-    permissions: [],
-    host_permissions: [],
+    permissions: ['activeTab', 'storage'],
+    host_permissions: ['https://www.youtube.com/watch*'],
+    content_scripts: [
+      {
+        matches: ['https://www.youtube.com/watch*'],
+        js: ['src/content/index.ts'],
+        run_at: 'document_idle',
+      },
+    ],
     browser_specific_settings: {
       gecko: {
         id: 'open-vocal-remover@extension.local',

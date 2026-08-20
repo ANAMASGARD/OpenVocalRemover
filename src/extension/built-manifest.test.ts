@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   assertChromeBackgroundShape,
   assertFirefoxBackgroundShape,
+  assertYouTubeContentScriptShape,
   readBuiltManifest,
 } from './built-manifest.ts'
 
@@ -26,6 +27,8 @@ describe('built browser manifests', () => {
 
     expect(() => assertChromeBackgroundShape(chromeManifest)).not.toThrow()
     expect(() => assertFirefoxBackgroundShape(firefoxManifest)).not.toThrow()
+    expect(() => assertYouTubeContentScriptShape(chromeManifest)).not.toThrow()
+    expect(() => assertYouTubeContentScriptShape(firefoxManifest)).not.toThrow()
 
     // CRXJS emits a root loader that imports the bundled background chunk.
     expect(chromeManifest.background?.service_worker).toBe('service-worker-loader.js')
